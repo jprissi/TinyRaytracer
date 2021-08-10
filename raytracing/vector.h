@@ -1,14 +1,18 @@
 #ifndef VEC_H
 #define VEC_H
 
-#include <iostream>
 using namespace std;
 
-class Vec3d {
+class Vect {
  public:
-  Vec3d();
-  Vec3d(double x, double y, double z);
+  Vect();
+  Vect(double x, double y, double z);
 
+  //Copy vector
+  Vect(const Vect& v);
+  //Adding dot-product operation
+  double operator* (const Vect& a);
+  
   double getX() const;
   double getY() const;
   double getZ() const;
