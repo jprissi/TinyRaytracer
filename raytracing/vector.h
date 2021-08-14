@@ -5,26 +5,26 @@ using namespace std;
 
 class Vect {
  public:
+  //Constructors
   Vect();
-  Vect(double x, double y, double z);
-
-  //Copy vector
-  //Vect(const Vect& v);
+  Vect(float x, float y, float z);
+  Vect(const Vect& v);
   //Adding dot-product operation
-  double operator* (const Vect& a);
+  float operator* (const Vect& v) const;
   //Vector sum operation
-  Vect operator+ (const Vect& a);
-  Vect operator- (const Vect& a);
-  Vect operator* (double k) const;
+  Vect operator+ (const Vect& v) const;
+  Vect operator- (const Vect& v) const;
+  Vect operator^ (const Vect& v) const;
+  Vect operator* (float k) const;
   Vect operator!() const;
   
-  double getX() const;
-  double getY() const;
-  double getZ() const;
+  float getX() const;
+  float getY() const;
+  float getZ() const;
 
-  double length() const;
- private:
-  double x,y,z;
+  float length() const;
+
+  float x,y,z;
 };
 
 #endif
