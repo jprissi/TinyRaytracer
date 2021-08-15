@@ -8,6 +8,8 @@ class Object  {
         virtual bool is_hit(
             const Vect& incoming_ray_origin,
             const Vect& incoming_ray_dir,
+            Vect& outgoing_ray_origin,
+            Vect& outgoing_ray_dir,
             float& hit_distance,
             Vect& hit_color
         ) const = 0;
@@ -17,7 +19,7 @@ class Object  {
         }
 
         Vect color;
-        Vect pos;        
+        Vect pos; 
 };
 
 class Triangle: public Object {
@@ -35,8 +37,8 @@ class Triangle: public Object {
         bool is_hit(
             const Vect& incoming_ray_origin,
             const Vect& incoming_ray_dir,
-            // Vect& outgoing_ray_origin,
-            // Vect& outgoing_ray_dir,
+            Vect& outgoing_ray_origin,
+            Vect& outgoing_ray_dir,
             float& hit_distance,
             Vect& hit_color
         ) const {
@@ -74,12 +76,12 @@ class Triangle: public Object {
             // cout << incoming_ray_dir.length()<<"; "<< incoming_ray_origin.length() << "\n";
             // cout << (-(ox - pox)*(uy*vz - uz*vy) + (oy - poy)*(ux*vz - uz*vx) - (oz - poz)*(ux*vy - uy*vx)) << "\n";
             // cout << (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx) << "\n";
-            const float ray_fact = -(ox*(uy*vz - uz*vy) - oy*(ux*vz - uz*vx) + oz*(ux*vy - uy*vx) - pox*( uy*vz + uz*vy) + poy*(ux*vz - uz*vx) - poz*(ux*vy + uy*vx)) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
+            //const float ray_fact = -(ox*(uy*vz - uz*vy) - oy*(ux*vz - uz*vx) + oz*(ux*vy - uy*vx) - pox*( uy*vz + uz*vy) + poy*(ux*vz - uz*vx) - poz*(ux*vy + uy*vx)) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
             const float u_fact = -(ox*ry*vz - ox*rz*vy - oy*rx*vz + oy*rz*vx + oz*rx*vy - oz*ry*vx - pox*ry*vz + pox*rz*vy + poy*rx*vz - poy*rz*vx - poz*rx*vy + poz*ry*vx) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
             const float v_fact = (ox*ry*uz - ox*rz*uy - oy*rx*uz + oy*rz*ux + oz*rx*uy - oz*ry*ux - pox*ry*uz + pox*rz*uy + poy*rx*uz - poy*rz*ux - poz*rx*uy + poz*ry*ux) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
             // const float u_fact = (-(ox - pox)*(ry*vz - rz*vy) + (oy - poy)*(rx*vz - rz*vx) - (oz - poz)*(rx*vy - ry*vx))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
 		    // const float v_fact = ((ox - pox)*(ry*uz - rz*uy) - (oy - poy)*(rx*uz - rz*ux) + (oz - poz)*(rx*uy - ry*ux))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
-		    // const float ray_fact = (-(ox - pox)*(uy*vz - uz*vy) + (oy - poy)*(ux*vz - uz*vx) - (oz - poz)*(ux*vy - uy*vx))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
+		    const float ray_fact = (-(ox - pox)*(uy*vz - uz*vy) + (oy - poy)*(ux*vz - uz*vx) - (oz - poz)*(ux*vy - uy*vx))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
 
 
             if( u_fact < 0 or u_fact > 1 or 
@@ -93,6 +95,9 @@ class Triangle: public Object {
             hit_distance = (incoming_ray_dir*ray_fact).length();
             // std::cout << hit_distance << "\n";
             if (hit_distance < 1e-3) return false;
+
+            outgoing_ray_origin = p0 + u*u_fact + v*v_fact;
+            outgoing_ray_dir = !Vect{incoming_ray_dir - !n*(incoming_ray_dir*!n)*2};
 
             hit_color = color;
 
