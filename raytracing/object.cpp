@@ -1,9 +1,17 @@
 #include "vector.h"
 #include <iostream>
+
+class Mat {
+    public:
+        Mat() : color(0, 0, 0), reflectivity(0) {}
+        Vect color;
+        float reflectivity;
+};
+
 class Object  {
     // Define a generic object class for different meshes that could appear on screen
     public:
-        Object() : color(0, 0, 0) {}
+        Object() : material() {}
 
         virtual bool is_hit(
             const Vect& incoming_ray_origin,
@@ -11,14 +19,17 @@ class Object  {
             Vect& outgoing_ray_origin,
             Vect& outgoing_ray_dir,
             float& hit_distance,
-            Vect& hit_color
+            //Vect& hit_color
+            Mat& hit_material
         ) const = 0;
 
         void set_color(const Vect& v) {
-            color = v;
+            material.color = v;
         }
-
-        Vect color;
+        void set_reflectivity(const float& f) {
+            material.reflectivity = f;
+        }
+        Mat material;
         Vect pos; 
 };
 
@@ -40,7 +51,8 @@ class Triangle: public Object {
             Vect& outgoing_ray_origin,
             Vect& outgoing_ray_dir,
             float& hit_distance,
-            Vect& hit_color
+            //Vect& hit_color
+            Mat& hit_material
         ) const {
             if (n*incoming_ray_dir >= 0) return false;
 
@@ -99,7 +111,8 @@ class Triangle: public Object {
             outgoing_ray_origin = p0 + u*u_fact + v*v_fact;
             outgoing_ray_dir = !Vect{incoming_ray_dir - !n*(incoming_ray_dir*!n)*2};
 
-            hit_color = color;
+            //hit_color = material.color;
+            hit_material = material;
 
             return true;
 

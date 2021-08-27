@@ -59,14 +59,18 @@ int main() {
   
   Vect ray_origin{0,1,-4};
   Vect ray_direction{0, 0, 0};
-
+  float ray_energy = 1.0f;
   Vect color{0,0,0};
+  Vect final_color{0,0,0};
+  Mat hit_material{};
 
   Vect outgoing_ray_origin;
   Vect outgoing_ray_dir;
 
   std::vector<Object*> scene_objects;
 
+ //TODO: Transparency (e.g. glass of water)
+ 
   // scene_objects.push_back(new Triangle{{-1,0,0}, {1,0,0}, {0,1.73,0}});
   // scene_objects.back()->set_color({0,0,255});
 
@@ -82,7 +86,7 @@ int main() {
                                          {2,0,-1},
                                          {0,3,-1.1}));
     scene_objects.back()->set_color({0,0,255});
-
+    scene_objects.back()->set_reflectivity(1.0f);
     // scene_objects.push_back(new Triangle({-0.1,0,0},
     //                                      {0.1,0,0},
     //                                      {0,0.1,0}));
@@ -92,6 +96,7 @@ int main() {
                                          {-2,0,-5},
                                          {0,3,-4.9}));
     scene_objects.back()->set_color({0,255,0});
+    scene_objects.back()->set_reflectivity(0.15f);
   // float v = ray_origin*Z;
   //cout << "origin*Z = " << v;
 
@@ -111,6 +116,8 @@ int main() {
       //We use pixel centers (x-0.5), (y-0.5)
       ray_direction = !Vect{X*(x-0.5) + Y*(y-0.5) + Z}; //!(Vect{(x-0.5), y-0.5, 0} - ray_origin);
       ray_origin = Vect{0,1,-4};
+      ray_energy = 1.0f;
+      final_color = {0,0,0};
       //cout << "dir(" << ray_direction*X << ", " << ray_direction*Y << ", " << ray_direction*Z << ")\n";
       float distance_to_hit;
       for(int number_bounces=0; number_bounces < max_hit_bounces; number_bounces++) {
@@ -120,7 +127,7 @@ int main() {
           Object* closest_object_ptr{nullptr};
 
           for (const auto& object : scene_objects) {
-            if(object->is_hit(ray_origin, ray_direction, outgoing_ray_origin, outgoing_ray_dir, distance_to_hit, color)){
+            if(object->is_hit(ray_origin, ray_direction, outgoing_ray_origin, outgoing_ray_dir, distance_to_hit, hit_material)){
               object_hit = true;
               if (distance_to_hit < closest_obj_dist) {
                 closest_obj_dist = distance_to_hit;
@@ -137,23 +144,27 @@ int main() {
               outgoing_ray_origin, 
               outgoing_ray_dir, 
               distance_to_hit, 
-              color
+              hit_material
             );
             ray_origin = outgoing_ray_origin;
             ray_direction = outgoing_ray_dir;
+
+            
+            final_color = final_color + hit_material.color*(1-hit_material.reflectivity)*ray_energy;
+            ray_energy *= hit_material.reflectivity;
           } else {
-            color = ray(ray_direction, ray_origin); //No object hit, draw sky or ground
+            final_color = final_color + ray(ray_direction, ray_origin)*ray_energy; //No object hit, draw sky or ground
             break;
           }
       }
       
       //cout << "color(R=" << color*X << ", V=" << color*Y << ", B=" << color*Z << ")\n";
       outfile
-        <<  (int)(std::max(0.f, std::min(255.f, color.x))+0.5)
+        <<  (int)(std::max(0.f, std::min(255.f, final_color.x))+0.5)
         << " "
-        <<  (int)(std::max(0.f, std::min(255.f, color.y))+0.5)
+        <<  (int)(std::max(0.f, std::min(255.f, final_color.y))+0.5)
         << " "
-        << (int)(std::max(0.f, std::min(255.f, color.z))+0.5) //static_cast<unsigned char>()
+        << (int)(std::max(0.f, std::min(255.f, final_color.z))+0.5) //static_cast<unsigned char>()
         << " ";
     }
     // cout << "\n";
