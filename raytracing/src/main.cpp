@@ -14,7 +14,7 @@ using namespace std;
 
 const float scale = 1.f/512; //depends on image resolution
 // int max_hit_bounces = 3; //Maximum number of ray hits
-int max_hit_bounces = 1000; //We're doing raytracing and not raycasting so it's fine
+int max_hit_bounces = 1000; //We're not doing realtime so it's fine
 
 const Vect X{1*scale, 0, 0};
 const Vect Y{0, 1*scale, 0};
@@ -60,17 +60,25 @@ void init_scene(std::vector<Object*>& scene_objects){
                                          {2,0,-1},
                                          {0,3,-1.1}));
     scene_objects.back()->set_color({0,0,255});
-    scene_objects.back()->set_reflectivity(0.9f);
+    scene_objects.back()->set_reflectivity(.8f);
+
+    scene_objects.push_back(new Sphere({0, 1, -2}, .3f));
+    scene_objects.back()->set_color({0,255,0});
+    scene_objects.back()->set_reflectivity(0.0f);
+
+    scene_objects.push_back(new Sphere({-1, 1.5f, -2}, .5f));
+    scene_objects.back()->set_color({255,0,0});
+    scene_objects.back()->set_reflectivity(.7f);
     // scene_objects.push_back(new Triangle({-0.1,0,0},
     //                                      {0.1,0,0},
     //                                      {0,0.1,0}));
     // scene_objects.back()->set_color({255, 0, 0});
 
-    scene_objects.push_back(new Triangle({2,0,-5},
-                                         {-2,0,-5},
-                                         {0,3,-4.9}));
-    scene_objects.back()->set_color({0,255,0});
-    scene_objects.back()->set_reflectivity(0.5f);
+    // scene_objects.push_back(new Triangle({2,0,-5},
+    //                                      {-2,0,-5},
+    //                                      {0,3,-4.9}));
+    // scene_objects.back()->set_color({0,255,0});
+    // scene_objects.back()->set_reflectivity(0.5f);
 }
 void export_color(Vect color, ofstream* p_outfile) {
   *p_outfile
@@ -148,6 +156,7 @@ int main() {
             break;
           };
       }
+      // propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects);
       export_color(final_color, &outfile);
     }
   }

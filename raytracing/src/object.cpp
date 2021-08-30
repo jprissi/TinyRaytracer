@@ -1,5 +1,7 @@
 #include "vector.h"
+
 #include <iostream>
+#include <cmath>
 
 class Material {
   /**
@@ -36,7 +38,7 @@ class Object  {
             material.reflectivity = f;
         }
         Material material;
-        Vect pos; 
+        // Vect pos; 
 };
 
 class Triangle: public Object {
@@ -91,16 +93,9 @@ class Triangle: public Object {
             const float& oy{incoming_ray_origin.y};
             const float& oz{incoming_ray_origin.z};
 
-            // cout << incoming_ray_dir.length()<<"; "<< incoming_ray_origin.length() << "\n";
-            // cout << (-(ox - pox)*(uy*vz - uz*vy) + (oy - poy)*(ux*vz - uz*vx) - (oz - poz)*(ux*vy - uy*vx)) << "\n";
-            // cout << (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx) << "\n";
-            //const float ray_fact = -(ox*(uy*vz - uz*vy) - oy*(ux*vz - uz*vx) + oz*(ux*vy - uy*vx) - pox*( uy*vz + uz*vy) + poy*(ux*vz - uz*vx) - poz*(ux*vy + uy*vx)) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
             const float u_fact = -(ox*ry*vz - ox*rz*vy - oy*rx*vz + oy*rz*vx + oz*rx*vy - oz*ry*vx - pox*ry*vz + pox*rz*vy + poy*rx*vz - poy*rz*vx - poz*rx*vy + poz*ry*vx) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
             const float v_fact = (ox*ry*uz - ox*rz*uy - oy*rx*uz + oy*rz*ux + oz*rx*uy - oz*ry*ux - pox*ry*uz + pox*rz*uy + poy*rx*uz - poy*rz*ux - poz*rx*uy + poz*ry*ux) / (rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
-            // const float u_fact = (-(ox - pox)*(ry*vz - rz*vy) + (oy - poy)*(rx*vz - rz*vx) - (oz - poz)*(rx*vy - ry*vx))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
-		    // const float v_fact = ((ox - pox)*(ry*uz - rz*uy) - (oy - poy)*(rx*uz - rz*ux) + (oz - poz)*(rx*uy - ry*ux))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
 		    const float ray_fact = (-(ox - pox)*(uy*vz - uz*vy) + (oy - poy)*(ux*vz - uz*vx) - (oz - poz)*(ux*vy - uy*vx))/(rx*uy*vz - rx*uz*vy - ry*ux*vz + ry*uz*vx + rz*ux*vy - rz*uy*vx);
-
 
             if( u_fact < 0 or u_fact > 1 or 
                 v_fact < 0 or v_fact > 1 or 
@@ -109,20 +104,72 @@ class Triangle: public Object {
                 return false;
             }
 
-            // cout << ray_fact << "; " << incoming_ray_dir.length() << "\n";
             hit_distance = (incoming_ray_dir*ray_fact).length();
-            // std::cout << hit_distance << "\n";
+
             if (hit_distance < 1e-3) return false;
 
             outgoing_ray_origin = p0 + u*u_fact + v*v_fact;
             outgoing_ray_dir = !Vect{incoming_ray_dir - !n*(incoming_ray_dir*!n)*2};
 
-            //hit_color = material.color;
             hit_material = material;
 
             return true;
-
         }
-
         Vect p0, p1, p2, u, v, n;
+};
+
+class Sphere: public Object {
+    public:
+        Sphere(
+            const Vect& position, 
+            const float& radius
+            ): pos(position), r(radius)
+            {};
+        float get_radius() {return r;}
+
+        bool is_hit(
+            const Vect& incoming_ray_origin,
+            const Vect& incoming_ray_dir,
+            Vect& outgoing_ray_origin,
+            Vect& outgoing_ray_dir,
+            float& hit_distance,
+            //Vect& hit_color
+            Material& hit_material
+        ) const {
+            
+            /**
+             * These geometric construcs can be complex to explain without a drawing. See reference
+             */
+
+            Vect p = pos - incoming_ray_origin;
+            //Vect p = incoming_ray_origin - pos;
+            float b = p * incoming_ray_dir;
+            float hit_limit = sqrt(p*p - pow(r, 2));
+            float s_squared = p*p - pow(b,2);
+            float t_squared = pow(r, 2) - s_squared;
+
+            if (b < hit_limit) return false;
+
+            //Compute distance at hit
+            float t = sqrt(t_squared);
+            hit_distance = b - t ;
+            
+            if(hit_distance >= hit_limit || hit_distance < 1e-3) return false;
+            //Compute normal
+            Vect normal = !(incoming_ray_dir*hit_distance - p);
+
+            outgoing_ray_origin = incoming_ray_origin + incoming_ray_dir*hit_distance;
+            outgoing_ray_dir = !Vect{incoming_ray_dir - (normal*(incoming_ray_dir*normal)*2)};
+
+            // if (p*incoming_ray_dir >= hit_limit) return false; //there's a hit
+            hit_material = material;
+            return true;
+        }
+    private:
+        float r;
+        Vect pos;
+
+        void debug_ray(Vect v) const {
+            cout << "(" << v.x << ", " << v.y << ", " << v.z << ") ";
+        }
 };
