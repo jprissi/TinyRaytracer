@@ -1,15 +1,21 @@
 #include "vector.h"
 #include <iostream>
 
-class Mat {
+class Material {
+  /**
+   * Defines a basic material
+   */
     public:
-        Mat() : color(0, 0, 0), reflectivity(0) {}
+        Material() : color(0, 0, 0), reflectivity(0) {}
         Vect color;
         float reflectivity;
 };
 
 class Object  {
-    // Define a generic object class for different meshes that could appear on screen
+    /**
+     * Define a generic object class for different meshes that could appear on screen
+     */
+
     public:
         Object() : material() {}
 
@@ -20,7 +26,7 @@ class Object  {
             Vect& outgoing_ray_dir,
             float& hit_distance,
             //Vect& hit_color
-            Mat& hit_material
+            Material& hit_material
         ) const = 0;
 
         void set_color(const Vect& v) {
@@ -29,7 +35,7 @@ class Object  {
         void set_reflectivity(const float& f) {
             material.reflectivity = f;
         }
-        Mat material;
+        Material material;
         Vect pos; 
 };
 
@@ -52,7 +58,7 @@ class Triangle: public Object {
             Vect& outgoing_ray_dir,
             float& hit_distance,
             //Vect& hit_color
-            Mat& hit_material
+            Material& hit_material
         ) const {
             if (n*incoming_ray_dir >= 0) return false;
 
