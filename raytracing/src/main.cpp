@@ -3,6 +3,7 @@
 #include <cmath>
 #include <limits>
 #include <vector>
+#include <random>
 
 #include "vector.h"
 #include "camera.cpp"
@@ -10,8 +11,12 @@
 
 using namespace std;
 
+//Initialize random seed & generator
+random_device rd;
+mt19937 gen(rd());
+uniform_real_distribution<float> rand_gen(-0.5f, 0.5f);
 
-
+const int AA_samples = 16;
 const float scale = 1.f/512; //depends on image resolution
 // int max_hit_bounces = 3; //Maximum number of ray hits
 int max_hit_bounces = 1000; //We're not doing realtime so it's fine
@@ -89,7 +94,7 @@ void export_color(Vect color, ofstream* p_outfile) {
     << (int)(std::max(0.f, std::min(255.f, color.z))+0.5)
     << " ";
 }
-bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::vector<Object*> scene_objects){
+bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::vector<Object*> scene_objects, Vect* p_color){
   float distance_to_hit;
   bool object_hit{false};
   float closest_obj_dist{std::numeric_limits<float>::max()};
@@ -117,17 +122,16 @@ bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::v
     ray_direction = *p_outgoing_ray_dir;
 
     
-    final_color = final_color + hit_material.color*(1-hit_material.reflectivity)*ray_energy;
+    *p_color = *p_color + hit_material.color*(1-hit_material.reflectivity)*ray_energy;
     ray_energy *= hit_material.reflectivity;
     return true;
   } else {
-    final_color = final_color + ray(ray_direction, ray_origin)*ray_energy; //No object hit, draw sky or ground
+    *p_color = *p_color + ray(ray_direction, ray_origin)*ray_energy; //No object hit, draw sky or ground
     // break;
     return false;
   }
 }
 int main() {
-  
   Vect outgoing_ray_origin;
   Vect outgoing_ray_dir;
 
@@ -146,16 +150,25 @@ int main() {
     for (int x=-255; x<= 256; x++){
       //For each image pixel...
       //We use pixel centers (x-0.5), (y-0.5)
-      ray_direction = !Vect{X*(x-0.5) + Y*(y-0.5) + Z}; //!(Vect{(x-0.5), y-0.5, 0} - ray_origin);
-      ray_origin = Vect{0,1,-4};
-      ray_energy = 1.0f;
       final_color = {0,0,0};
-      for(int number_bounces=0; number_bounces < max_hit_bounces; number_bounces++) {
-          if(!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects)){
+      for(int i=0; i<AA_samples; i++){
+        color = {0,0,0};
+        float x_offset = rand_gen(gen);
+        float y_offset = rand_gen(gen);
+
+        ray_direction = !Vect{X*(x-0.5+x_offset) + Y*(y-0.5+y_offset) + Z}; //!(Vect{(x-0.5), y-0.5, 0} - ray_origin);
+        ray_origin = Vect{0,1,-4};
+        ray_energy = 1.0f;
+        
+        for(int number_bounces=0; number_bounces < max_hit_bounces; number_bounces++) {
+          if(!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects, &color)){
             //If no bounce
             break;
           };
+        }
+        final_color = final_color + color*(1.0f/AA_samples);
       }
+      
       // propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects);
       export_color(final_color, &outfile);
     }
