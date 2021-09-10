@@ -1,3 +1,14 @@
+/**
+ * 
+ * This project was written while following the slides for the "Let's build a simple raytracer" course available on Github
+ * I chose to slightly change the architecture. This is a first time writing C++.
+ * 
+ * Bonus interesting features to add as exercices :
+ * 
+ * - Transparency (make a glass of water with an object inside)
+ * 
+ */
+
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -6,6 +17,10 @@
 #include <random>
 
 #include "vector.h"
+#include "light.h"
+#include "lodepng.h"
+
+//TEMPORARY
 #include "camera.cpp"
 #include "object.cpp"
 
@@ -16,26 +31,30 @@ random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<float> rand_gen(-0.5f, 0.5f);
 
-const int AA_samples = 16;
+// INITIALIZATION STUFF / CONSTANTS
+const int AA_samples = 32; //Antialiasing samples
 const float scale = 1.f/512; //depends on image resolution
 // int max_hit_bounces = 3; //Maximum number of ray hits
-int max_hit_bounces = 1000; //We're not doing realtime so it's fine
+int max_hit_bounces = 1000; //We're not doing realtime computation so it is fine
+
 
 const Vect X{1*scale, 0, 0};
 const Vect Y{0, 1*scale, 0};
 const Vect Z{0, 0, 1};
 
 Camera cam{512, 512};
-  
+vector<unsigned char> img;
+
 Vect ray_origin{0,1,-4};
 Vect ray_direction{0, 0, 0};
 float ray_energy = 1.0f;
 Vect color{0,0,0};
 Vect final_color{0,0,0};
-Material hit_material{};
+Vect v{2,3,-4};
+Light light_src{v};
 
 Vect sky_color(Vect direction) {
-  return Vect{1.0, 1.0, 1.0}*255.f * std::pow(1-direction.getY(), 2);
+  return Vect{0.3, 0.3, 0.6}*255.f * std::pow(1-direction.getY(), 2);
 }
 
 Vect ground_color(Vect direction, Vect origin){
@@ -69,11 +88,15 @@ void init_scene(std::vector<Object*>& scene_objects){
 
     scene_objects.push_back(new Sphere({0, 1, -2}, .3f));
     scene_objects.back()->set_color({0,255,0});
-    scene_objects.back()->set_reflectivity(0.0f);
+    scene_objects.back()->set_reflectivity(0.1f);
 
     scene_objects.push_back(new Sphere({-1, 1.5f, -2}, .5f));
     scene_objects.back()->set_color({255,0,0});
     scene_objects.back()->set_reflectivity(.7f);
+
+    // Vect light_pos = {2,3,2};
+    // light_src = Light{light_pos};
+    // light_src.pos = Vect{2, 3, 2};
     // scene_objects.push_back(new Triangle({-0.1,0,0},
     //                                      {0.1,0,0},
     //                                      {0,0.1,0}));
@@ -85,23 +108,29 @@ void init_scene(std::vector<Object*>& scene_objects){
     // scene_objects.back()->set_color({0,255,0});
     // scene_objects.back()->set_reflectivity(0.5f);
 }
-void export_color(Vect color, ofstream* p_outfile) {
-  *p_outfile
-    <<  (int)(std::max(0.f, std::min(255.f, color.x))+0.5)
-    << " "
-    <<  (int)(std::max(0.f, std::min(255.f, color.y))+0.5)
-    << " "
-    << (int)(std::max(0.f, std::min(255.f, color.z))+0.5)
-    << " ";
+void export_color(Vect color) {
+  img.push_back(
+    (unsigned char)(std::max(0.f, std::min(255.f, color.x))+0.5)
+  );
+  img.push_back(
+    (std::max(0.f, std::min(255.f, color.y))+0.5)
+  );
+  img.push_back(
+    (std::max(0.f, std::min(255.f, color.z))+0.5)
+  );
+  img.push_back(
+    255
+  );
 }
 bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::vector<Object*> scene_objects, Vect* p_color){
   float distance_to_hit;
   bool object_hit{false};
   float closest_obj_dist{std::numeric_limits<float>::max()};
   Object* closest_object_ptr{nullptr};
-
+  Material hit_material{};
+  Vect hit_color{0,0,0};
   for (const auto& object : scene_objects) {
-    if(object->is_hit(ray_origin, ray_direction, *p_outgoing_ray_origin, *p_outgoing_ray_dir, distance_to_hit, hit_material)){
+    if(object->is_hit(ray_origin, ray_direction, *p_outgoing_ray_origin, *p_outgoing_ray_dir, distance_to_hit, hit_material, hit_color, ray_energy, light_src)){
       object_hit = true;
       if (distance_to_hit < closest_obj_dist) {
         closest_obj_dist = distance_to_hit;
@@ -116,13 +145,16 @@ bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::v
       *p_outgoing_ray_origin, 
       *p_outgoing_ray_dir, 
       distance_to_hit, 
-      hit_material
+      hit_material,
+      hit_color,
+      ray_energy,
+      light_src
     );
     ray_origin = *p_outgoing_ray_origin;
     ray_direction = *p_outgoing_ray_dir;
 
     
-    *p_color = *p_color + hit_material.color*(1-hit_material.reflectivity)*ray_energy;
+    *p_color = *p_color + hit_color;
     ray_energy *= hit_material.reflectivity;
     return true;
   } else {
@@ -136,14 +168,10 @@ int main() {
   Vect outgoing_ray_dir;
 
   std::vector<Object*> scene_objects;
-
- //TODO: Transparency (e.g. glass of water)
  
   init_scene(scene_objects);
-    
-  // Creating a ppm image file
-  ofstream outfile("img.ppm");
-  outfile << "P3 512 512 255 ";
+
+  img.reserve(4*cam.getWidth()*cam.getHeight());
 
   //Left-handed base with z forward
   for (int y=256; y>=-255; y--){
@@ -170,11 +198,18 @@ int main() {
       }
       
       // propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects);
-      export_color(final_color, &outfile);
+      export_color(final_color);
     }
   }
+  const char* filename = "img.png";
+  unsigned error = lodepng::encode(filename, img, cam.getWidth(), cam.getHeight());
 
-  cout << "Exported img.ppm!\n";  
+  if(error) {
+    cout << "encoder error" << error << ": "<< lodepng_error_text(error) << endl;
+  } else {
+      cout << "Exported img.png!\n";  
+  }
+
   return 0;
 }
 

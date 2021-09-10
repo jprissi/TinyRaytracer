@@ -18,8 +18,10 @@ all: $(EXE)
 $(EXE): $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+$(OBJ_DIR):
+	mkdir -p $@
 clean:
 	@$(RM) -rv $(OBJ_DIR)
 -include $(OBJ:.o=.d)

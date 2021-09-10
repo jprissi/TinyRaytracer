@@ -1,8 +1,6 @@
 #ifndef VEC_H
 #define VEC_H
 
-using namespace std;
-
 class Vect {
  public:
   //Constructors

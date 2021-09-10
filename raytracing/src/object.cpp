@@ -1,7 +1,10 @@
 #include "vector.h"
+#include "light.h"
 
 #include <iostream>
 #include <cmath>
+
+using namespace std;
 
 class Material {
   /**
@@ -11,8 +14,22 @@ class Material {
         Material() : color(0, 0, 0), reflectivity(0) {}
         Vect color;
         float reflectivity;
+        float k_diffuse = 0.4f;
+        float k_specular = 0.4f;
+        float hardness = 100.0f;
 };
 
+// class Texture {
+//     public:
+//         Vect** tex;
+//         int w, h;
+//         Texture(const int width, const int height): w(width), h(height) {
+//             tex = new Vect*[h];
+//             for (int i=0; i<h; i++) {
+//                 tex[i] = new Vect[]
+//             }
+//         }
+// }
 class Object  {
     /**
      * Define a generic object class for different meshes that could appear on screen
@@ -28,7 +45,10 @@ class Object  {
             Vect& outgoing_ray_dir,
             float& hit_distance,
             //Vect& hit_color
-            Material& hit_material
+            Material& hit_material,
+            Vect& hit_color,
+            float ray_energy,
+            Light light_source
         ) const = 0;
 
         void set_color(const Vect& v) {
@@ -36,6 +56,21 @@ class Object  {
         }
         void set_reflectivity(const float& f) {
             material.reflectivity = f;
+        }
+
+        Vect compute_color(Material mat, Light light, Vect hit_point, Vect hit_normal, Vect out_ray_dir) const {
+            // Vect color{0, 0, 0};
+            Vect L = !(light.pos - hit_point);
+            //Ambient light
+            Vect I_ambient = mat.color*light.k_ambient;
+            //Diffuse
+            float f_diffuse = L*hit_normal;
+            Vect I_diffuse = (f_diffuse < .0f) ? Vect{0, 0, 0} : mat.color*f_diffuse*mat.k_diffuse;
+            //Specular
+            float f_specular = pow(max(0.f, L*!out_ray_dir), mat.hardness);
+            Vect I_specular = light.color*f_specular*mat.k_specular;
+            //return I_specular;
+            return I_ambient + I_diffuse + I_specular;
         }
         Material material;
         // Vect pos; 
@@ -60,7 +95,10 @@ class Triangle: public Object {
             Vect& outgoing_ray_dir,
             float& hit_distance,
             //Vect& hit_color
-            Material& hit_material
+            Material& hit_material,
+            Vect& hit_color,
+            float ray_energy,
+            Light light_source
         ) const {
             if (n*incoming_ray_dir >= 0) return false;
 
@@ -112,7 +150,7 @@ class Triangle: public Object {
             outgoing_ray_dir = !Vect{incoming_ray_dir - !n*(incoming_ray_dir*!n)*2};
 
             hit_material = material;
-
+            hit_color = material.color*(1-material.reflectivity)*ray_energy;
             return true;
         }
         Vect p0, p1, p2, u, v, n;
@@ -123,7 +161,7 @@ class Sphere: public Object {
         Sphere(
             const Vect& position, 
             const float& radius
-            ): pos(position), r(radius)
+            ): r(radius), pos(position)
             {};
         float get_radius() {return r;}
 
@@ -133,8 +171,10 @@ class Sphere: public Object {
             Vect& outgoing_ray_origin,
             Vect& outgoing_ray_dir,
             float& hit_distance,
-            //Vect& hit_color
-            Material& hit_material
+            Material& hit_material,
+            Vect& hit_color,
+            float ray_energy,
+            Light light_source
         ) const {
             
             /**
@@ -163,6 +203,7 @@ class Sphere: public Object {
 
             // if (p*incoming_ray_dir >= hit_limit) return false; //there's a hit
             hit_material = material;
+            hit_color = compute_color(material, light_source, outgoing_ray_origin, normal, outgoing_ray_dir)*(1-material.reflectivity)*ray_energy;
             return true;
         }
     private:
