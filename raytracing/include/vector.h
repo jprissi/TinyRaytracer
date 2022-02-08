@@ -1,6 +1,8 @@
 #ifndef VEC_H
 #define VEC_H
 
+#include <ostream>
+
 class Vect {
  public:
   //Constructors
@@ -15,7 +17,8 @@ class Vect {
   Vect operator^ (const Vect& v) const;
   Vect operator* (float k) const;
   Vect operator!() const;
-  
+
+  //std::tostring
   float getX() const;
   float getY() const;
   float getZ() const;
@@ -24,5 +27,5 @@ class Vect {
 
   float x,y,z;
 };
-
+std::ostream& operator<<(std::ostream &strm, const Vect &v);
 #endif

@@ -30,9 +30,7 @@ Vect Vect::operator^(const Vect& v) const {
     x*v.y - y*v.x
   };
 }
-// Vect float::operator*(float k, const Vect& v) {
-//   return v*k;
-// }
+
 
 float Vect::length() const
 {
@@ -44,6 +42,6 @@ Vect Vect::operator!() const {
 }
 
 std::ostream& operator<<(std::ostream &strm, const Vect &v) {
-  return strm << "v(" << v.x << "; " << v.y << "; " << v.z << "\n";
+  return strm << "(" << v.x << "; " << v.y << "; " << v.z << ")";
 }
 

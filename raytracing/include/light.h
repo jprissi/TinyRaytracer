@@ -7,10 +7,11 @@ class Light {
     public:
         Vect pos;
         Vect color;
-        Light(Vect);
-        // Light();
-        float k_ambient;
+	float k_ambient;
         float k_diffuse;
+	
+        Light(Vect);
+        Light();
 };
 
 #endif

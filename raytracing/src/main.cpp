@@ -7,6 +7,7 @@
  * 
  * - Transparency (make a glass of water with an object inside)
  * 
+ * Warning: We use a left-handed base with z forward (as it is apparently common to do in the computer graphics field)
  */
 
 #include <iostream>
@@ -35,7 +36,7 @@ uniform_real_distribution<float> rand_gen(-0.5f, 0.5f);
 const int AA_samples = 32; //Antialiasing samples
 const float scale = 1.f/512; //depends on image resolution
 // int max_hit_bounces = 3; //Maximum number of ray hits
-int max_hit_bounces = 1000; //We're not doing realtime computation so it is fine
+int max_hit_bounces = 100; //We're not doing realtime computation so it is fine
 
 
 const Vect X{1*scale, 0, 0};
@@ -45,84 +46,153 @@ const Vect Z{0, 0, 1};
 Camera cam{512, 512};
 vector<unsigned char> img;
 
+// Ray initial parameters (#TODO ray object)
 Vect ray_origin{0,1,-4};
 Vect ray_direction{0, 0, 0};
-float ray_energy = 1.0f;
 Vect color{0,0,0};
 Vect final_color{0,0,0};
-Vect v{2,3,-4};
-Light light_src{v};
+float ray_energy = 1.0f;
+
+
+// Defining light source
+Light light_src; //(uses default constructor)
+
+// Container for the objects of the scene
+std::vector<Object*> scene_objects;
+
+//DEBUG Variables
+
 
 Vect sky_color(Vect direction) {
-  return Vect{0.3, 0.3, 0.6}*255.f * std::pow(1-direction.getY(), 2);
+  /* Computes the color of the sky based on ray direction
+   * Input : Vect direction, the direction of the ray
+   * Output : Vect, the color of the sky in this direction
+   */
+  return Vect{0.3, 0.3, 0.6} * 255.f
+			     * std::pow(1-direction.getY(), 2);
 }
 
 Vect ground_color(Vect direction, Vect origin){
+  
   float dist = - origin.y / direction.y;
   float x = origin.x + dist*direction.x;
+  float y = 0; //Ground is at 0-level
   float z = origin.z + dist*direction.z;
 
-  if (
-    (int)std::abs(std::floor(x)) % 2 ==
-    (int)std::abs(std::floor(z)) % 2 ) { //Black if both x and y are odd/even
-   return Vect{0.0,0.0,0.0}*255.f;
-  } 
-  return Vect{1.0,1.0,1.0}*255.f;
-}
+  Vect hit_point = Vect{x, y, z};
+  //float distance_to_hit;
+  bool is_directly_lit{true};
 
-Vect ray(Vect direction, Vect origin) {
-  if (direction*Y<0) {
-    //hitting ground
-    return ground_color(direction, origin);
+  //Material hit_material{};
+  Vect hit_color{0,0,0};
+
+  //Handle shadowing
+  Vect dir = !(light_src.pos-hit_point);
+  //cout << dir <<endl;
+  for (const auto& object : scene_objects) {
+    //cout<<dir<<endl;
+    if(object->is_hit(hit_point, dir)){
+      //cout<<dir<<endl;
+      is_directly_lit = false;
+      break;
+    }
+    }
+
+  if ((int)std::abs(std::floor(x)) % 2 == (int)std::abs(std::floor(z)) % 2 ) { //Black if both x and y are odd/even
+    hit_color = Vect{0.0,0.0,0.0}*255.f;
+  } else {
+    hit_color = Vect{1.0,1.0,1.0}*255.f;
   }
-    //"hitting" sky
-    return sky_color(direction);
+
+  if(!is_directly_lit){
+    return hit_color*light_src.k_ambient;
+  }
+  return hit_color;
 }
 
-void init_scene(std::vector<Object*>& scene_objects){
-    scene_objects.push_back(new Triangle({-2,0.5f,-1},
-                                         {2,0,-1},
-                                         {0,3,-1.1}));
-    scene_objects.back()->set_color({0,0,255});
+void add_object_to_scene(Object* obj, Vect color, float reflectivity){
+  //obj->set_pos(pos); //Not adapted to triangle object for now #TODO
+  scene_objects.push_back(obj);
+  scene_objects.back()->set_color(color);
+  scene_objects.back()->set_reflectivity(reflectivity);
+}
+
+void init_scene(){
+  /* 
+   * Populate the scene with objects
+   * Possible improvement : populate scene from .yaml file
+   */
+
+  //Octahedron (as in example from course)
+  /// Octahedron (8 triangles)
+  /// Bottom half
+  scene_objects.push_back(new Triangle{{ 0, 0, 0},
+                                       {-1, 1, 0},
+                                       { 0, 1, 1}});
+scene_objects.back()->set_color({0,0,255});
+ scene_objects.back()->set_reflectivity(.8f);
+  scene_objects.push_back(new Triangle{{ 0, 0, 0},
+                                       { 0, 1,-1},
+                                       {-1, 1, 0}});
+scene_objects.back()->set_color({0,0,255});
+ scene_objects.back()->set_reflectivity(.8f);
+  scene_objects.push_back(new Triangle{{ 0, 0, 0},
+                                       { 1, 1, 0},
+                                       { 0, 1,-1}});
+scene_objects.back()->set_color({0,0,255});
+ scene_objects.back()->set_reflectivity(.8f);
+  scene_objects.push_back(new Triangle{{ 0, 0, 0},
+                                       { 0, 1, 1},
+                                       { 1, 1, 0}});
+scene_objects.back()->set_color({0,0,255});
+ scene_objects.back()->set_reflectivity(.8f);
+  /// Top half
+  scene_objects.push_back(new Triangle{{ 0, 2, 0},
+                                       { 0, 1, 1},
+					 {-1, 1, 0}});
+scene_objects.back()->set_color({0,0,255});
     scene_objects.back()->set_reflectivity(.8f);
+  scene_objects.push_back(new Triangle{{ 0, 2, 0},
+                                       { 1, 1, 0},
+                                       { 0, 1, 1}});
+  scene_objects.back()->set_color({0,0,255});
+    scene_objects.back()->set_reflectivity(.8f);
+  scene_objects.push_back(new Triangle{{ 0, 2, 0},
+                                       { 0, 1,-1},
+                                       { 1, 1, 0}});
+  scene_objects.back()->set_color({0,0,255});
+  scene_objects.back()->set_reflectivity(.8f);
+  scene_objects.push_back(new Triangle{{ 0, 2, 0},
+                                       {-1, 1, 0},
+				       { 0, 1,-1}});
+  scene_objects.back()->set_color({0,0,255});
+  scene_objects.back()->set_reflectivity(.8f);
+  
+  Sphere* sphere1 = new Sphere(.3f); //creating a sphere object with .3f radius
+  sphere1->set_pos({0.5f,1,-2});
+  add_object_to_scene(sphere1, {0,255,0}, 0.0f);
 
-    scene_objects.push_back(new Sphere({0, 1, -2}, .3f));
-    scene_objects.back()->set_color({0,255,0});
-    scene_objects.back()->set_reflectivity(0.1f);
+  Sphere* sphere2 = new Sphere(.5f);
+  sphere2->set_pos({-1,1.5f,-2});
+  add_object_to_scene(sphere2, {255, 0, 0}, 0.7f);
 
-    scene_objects.push_back(new Sphere({-1, 1.5f, -2}, .5f));
-    scene_objects.back()->set_color({255,0,0});
-    scene_objects.back()->set_reflectivity(.7f);
-
-    // Vect light_pos = {2,3,2};
-    // light_src = Light{light_pos};
-    // light_src.pos = Vect{2, 3, 2};
-    // scene_objects.push_back(new Triangle({-0.1,0,0},
-    //                                      {0.1,0,0},
-    //                                      {0,0.1,0}));
-    // scene_objects.back()->set_color({255, 0, 0});
-
-    // scene_objects.push_back(new Triangle({2,0,-5},
-    //                                      {-2,0,-5},
-    //                                      {0,3,-4.9}));
-    // scene_objects.back()->set_color({0,255,0});
-    // scene_objects.back()->set_reflectivity(0.5f);
+  //Light initialization
+  Vect light_pos = Vect{0,100,0};
+  light_src = Light{light_pos}; //Initializing Light object with proper initial values
 }
+
+
 void export_color(Vect color) {
-  img.push_back(
-    (unsigned char)(std::max(0.f, std::min(255.f, color.x))+0.5)
-  );
-  img.push_back(
-    (std::max(0.f, std::min(255.f, color.y))+0.5)
-  );
-  img.push_back(
-    (std::max(0.f, std::min(255.f, color.z))+0.5)
-  );
-  img.push_back(
-    255
-  );
+  /*
+   * RVBA channels
+   */
+  img.push_back((std::max(0.f, std::min(255.f, color.x))+0.5));
+  img.push_back((std::max(0.f, std::min(255.f, color.y))+0.5));
+  img.push_back((std::max(0.f, std::min(255.f, color.z))+0.5));
+  img.push_back(255);
 }
-bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::vector<Object*> scene_objects, Vect* p_color){
+
+bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, Vect* p_color){
   float distance_to_hit;
   bool object_hit{false};
   float closest_obj_dist{std::numeric_limits<float>::max()};
@@ -158,19 +228,21 @@ bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, std::v
     ray_energy *= hit_material.reflectivity;
     return true;
   } else {
-    *p_color = *p_color + ray(ray_direction, ray_origin)*ray_energy; //No object hit, draw sky or ground
-    // break;
+    //No object in reach (case 1 : we hit the ground, case 2 : we "hit" the sky)
+    if (ray_direction*Y<0) {
+      hit_color =  ground_color(ray_direction, ray_origin);
+    } else {
+      hit_color = sky_color(ray_direction);
+    }
+    *p_color = *p_color + hit_color*ray_energy; //No object hit, draw sky or ground
     return false;
   }
 }
 int main() {
   Vect outgoing_ray_origin;
   Vect outgoing_ray_dir;
-
-  std::vector<Object*> scene_objects;
  
-  init_scene(scene_objects);
-
+  init_scene(); //Initialize scene objects and light position
   img.reserve(4*cam.getWidth()*cam.getHeight());
 
   //Left-handed base with z forward
@@ -189,7 +261,7 @@ int main() {
         ray_energy = 1.0f;
         
         for(int number_bounces=0; number_bounces < max_hit_bounces; number_bounces++) {
-          if(!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects, &color)){
+          if(!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, &color)){
             //If no bounce
             break;
           };
@@ -201,13 +273,15 @@ int main() {
       export_color(final_color);
     }
   }
+
+  // Exporting file to .png using lodepng library
   const char* filename = "img.png";
   unsigned error = lodepng::encode(filename, img, cam.getWidth(), cam.getHeight());
 
   if(error) {
     cout << "encoder error" << error << ": "<< lodepng_error_text(error) << endl;
   } else {
-      cout << "Exported img.png!\n";  
+    cout << "Exported img.png!\n";  
   }
 
   return 0;
