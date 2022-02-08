@@ -44,6 +44,9 @@ const Vect Y{0, 1*scale, 0};
 const Vect Z{0, 0, 1};
 
 Camera cam{512, 512};
+float focal_distance{2.5f};
+float aperture{0.1f};
+
 vector<unsigned char> img;
 
 // Ray initial parameters (#TODO ray object)
@@ -238,6 +241,11 @@ bool propagate_ray(Vect* p_outgoing_ray_origin, Vect* p_outgoing_ray_dir, Vect* 
     return false;
   }
 }
+float random_offset()
+{
+  // Random value uniform in [-0.5, 0.5]
+  return static_cast<float>(rand()) / RAND_MAX - 0.5f;
+}
 int main() {
   Vect outgoing_ray_origin;
   Vect outgoing_ray_dir;
@@ -259,7 +267,13 @@ int main() {
         ray_direction = !Vect{X*(x-0.5+x_offset) + Y*(y-0.5+y_offset) + Z}; //!(Vect{(x-0.5), y-0.5, 0} - ray_origin);
         ray_origin = Vect{0,1,-4};
         ray_energy = 1.0f;
-        
+
+	//adding depth of field
+	
+	Vect sensor_shift{random_offset()*aperture,random_offset()*aperture,0.0f};
+	ray_origin = ray_origin+sensor_shift;
+	ray_direction = !(ray_direction - sensor_shift*(1./focal_distance));
+	
         for(int number_bounces=0; number_bounces < max_hit_bounces; number_bounces++) {
           if(!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, &color)){
             //If no bounce
