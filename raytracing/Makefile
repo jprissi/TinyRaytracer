@@ -2,7 +2,7 @@
 
 CXX := g++
 CXXFLAGS := -Wall -Wextra -Wpedantic -std=c++17 -O2
-CPPFLAGS := -Iinclude -MMD -MP
+CPPFLAGS := -Iinclude -Ilib/ -MMD -MP
 
 EXE ?= raytracer
 OBJ_DIR ?= ./build
@@ -24,7 +24,7 @@ $(OBJ_DIR):
 	mkdir -p $@
 run: $(EXE)
 	./$(EXE)
-	./show_img.sh
+	./scripts/show_img.sh
 clean:
 	@$(RM) -rv $(OBJ_DIR)
 -include $(OBJ:.o=.d)
