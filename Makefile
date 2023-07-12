@@ -4,7 +4,7 @@ CXX := g++
 CXXFLAGS := -Wall -Wextra -Wpedantic -std=c++17 -O2
 CPPFLAGS := -Iinclude -Ilib/ -MMD -MP
 
-EXE ?= raytracer
+EXE ?= ./bin/raytracer
 OBJ_DIR ?= ./build
 SRC_DIR ?= ./src
 
