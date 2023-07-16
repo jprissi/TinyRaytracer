@@ -1,17 +1,18 @@
 # TinyRaytracer
 
-This is a basic raytracer. 
+This is a basic raytracer written in C++.
 
-It is heavily inspired from the great [Raycasting From Scratch](https://github.com/nikolausmayer/raytracing-from-scratch) lesson by Nikolaus Mayer.
+It is heavily inspired by the great [Raycasting From Scratch](https://github.com/nikolausmayer/raytracing-from-scratch) lesson by Nikolaus Mayer.
 
-The plan is to use this project in order to get familiar with C++ by writing my own implementation, using the theoretical explanations from the slides.
-It will be interesting to add my own features aswell.
+This project was meant as a way to get familiar with C++ by using the theoretical explanations from the lesson's slides and writing my own implementation. There are many directions to explore and this project is far from being finished.
 
 Next steps:
 
-- Add UV mapping in order to use textures
-- Improve positioning
-- Export to other file formats
+- Add UV Mapping
+    - ~~To spheres~~
+    - To other objects
+- Improve positioning system (coordinates, matrices, frames, ...)
+- ~~Export to other file formats (png instead of ppm)~~
 
 Some (fun) ideas:
 
