@@ -1,6 +1,0 @@
-.vscode
-*~
-./.vscode/*
-
-build/
-*.ppm

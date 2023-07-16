@@ -1,2 +1,8 @@
-build/
 bin/
+
+.vscode
+*~
+./.vscode/*
+
+build/
+*.ppm
