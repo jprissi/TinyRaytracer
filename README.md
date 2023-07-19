@@ -14,8 +14,9 @@ Next steps:
 - Improve positioning system (coordinates, matrices, frames, ...)
 - ~~Export to other file formats (png instead of ppm)~~
 
-Some (fun) ideas:
+Some *FUN* ideas:
 
+- Raycasting (for a GUI editor for instance)
 - Implement atmospheric diffusion.
 - Add clouds
 

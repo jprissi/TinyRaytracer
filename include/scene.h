@@ -13,7 +13,7 @@ public:
   std::vector<Object *> scene_objects;
   Light lightSource;
   Camera camera;
-  void addObject(Object *obj, Vect color, float reflectivity);
+  void addObject(Object *obj, vect3 color, float reflectivity);
   // void setCamera(Camera c) : camera(c) {};
   void init();
 };

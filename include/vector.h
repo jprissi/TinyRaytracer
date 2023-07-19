@@ -3,24 +3,24 @@
 
 #include <ostream>
 
-class Vect {
+class vect3 {
 public:
   // Constructors
-  Vect() : x(0), y(0), z(0){};
-  Vect(float x, float y, float z) : x(x), y(y), z(z){};
-  // Vect(const Vect &v) : x(v.x), y(v.y), z(v.z){};
+  vect3() : x(0), y(0), z(0){};
+  vect3(float x, float y, float z) : x(x), y(y), z(z){};
+  // vect3(const vect3 &v) : x(v.x), y(v.y), z(v.z){};
   float x, y, z;
-  float operator*(const Vect &v) const; // dot product
-  Vect operator+(const Vect &v) const;
-  Vect operator-(const Vect &v) const;
-  Vect operator^(const Vect &v) const; // cross product
-  Vect operator*(float k) const;
-  Vect operator!() const; // normalization
+  float operator*(const vect3 &v) const; // dot product
+  vect3 operator+(const vect3 &v) const;
+  vect3 operator-(const vect3 &v) const;
+  vect3 operator^(const vect3 &v) const; // cross product
+  vect3 operator*(float k) const;
+  vect3 operator!() const; // normalization
   float length() const;
 };
 
-std::ostream &operator<<(std::ostream &strm, const Vect &v);
+std::ostream &operator<<(std::ostream &strm, const vect3 &v);
 
-typedef Vect Color; // Simple alias
+typedef vect3 Color; // Simple alias
 
 #endif

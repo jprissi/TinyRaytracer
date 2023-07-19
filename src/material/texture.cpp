@@ -1,22 +1,22 @@
 #include "material/texture.h"
 #include <cmath>
 
-Vect PlainTexture::get_color(Vect const &hit_point,
-                             Vect const &object_center) const {
+vect3 PlainTexture::get_color(vect3 const &hit_point,
+                              vect3 const &object_position) const {
   return this->color;
 }
 
-Vect ImageTexture::get_color(Vect const &hit_point,
-                             Vect const &object_center) const {
-  Vect color = this->map_to_UV_coordinates(hit_point, object_center);
+vect3 ImageTexture::get_color(vect3 const &hit_point,
+                              vect3 const &object_position) const {
+  vect3 color = this->map_3D_to_UV_coordinates(hit_point, object_position);
   return color;
 }
 
-Vect ImageTexture::map_to_UV_coordinates(Vect const &hit_point,
-                                         Vect const &object_center) const {
+vect3 ImageTexture::map_3D_to_UV_coordinates(
+    vect3 const &hit_point, vect3 const &object_position) const {
   // For Sphere:
 
-  Vect d = !(hit_point - object_center);
+  vect3 d = !(hit_point - object_position);
   float u = 0.5 + std::atan2(d.z, d.x) / (2 * M_PI);
   float v = 0.5 + std::asin(d.y) / M_PI;
 
@@ -28,7 +28,7 @@ Vect ImageTexture::map_to_UV_coordinates(Vect const &hit_point,
   return ImageTexture::get_pixel(x, y);
 }
 
-Vect ImageTexture::get_pixel(unsigned const x, unsigned const y) const {
+vect3 ImageTexture::get_pixel(unsigned const x, unsigned const y) const {
 
   unsigned idx = (unsigned int)(this->texture_image.size() - 1);
   idx = std::min(y * this->xsize + x, idx);
@@ -38,5 +38,5 @@ Vect ImageTexture::get_pixel(unsigned const x, unsigned const y) const {
   unsigned char b = this->texture_image[4 * idx + 2];
   unsigned char a = this->texture_image[4 * idx + 3];
 
-  return Vect(r, g, b);
+  return vect3(r, g, b);
 }

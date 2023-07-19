@@ -6,8 +6,8 @@
 class Camera
 {
 private:
-  Vect position;
-  Vect direction;
+  vect3 position;
+  vect3 direction;
   // Temp variables
   //  int projection_center;
   //  int focal_length;
@@ -21,8 +21,8 @@ public:
       int width = 512,
       int height = 512,
       float focalDistance = 2.5f,
-      float aperture = 0.05f) : position(Vect{0, 0, 0}),
-                                direction(Vect{0, 0, 1}),
+      float aperture = 0.05f) : position(vect3{0, 0, 0}),
+                                direction(vect3{0, 0, 1}),
                                 width(width),
                                 height(height),
                                 focalDistance(focalDistance),

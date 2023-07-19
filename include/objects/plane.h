@@ -1,18 +1,26 @@
-#ifndef OBJ_TRIANGLE
-#define OBJ_TRIANGLE
+#ifndef OBJ_PLANE
+#define OBJ_PLANE
 
 #include "object.h"
+#include "triangle.h"
 
-class Triangle : public Object {
+class Plane : public Object {
 public:
-  vect3 p0, p1, p2, u, v, n;
-  Triangle(const vect3 &p0, const vect3 &p1, const vect3 &p2)
-      : p0(p0), p1(p1), p2(p2) {
-    u = p1 - p0;
-    v = p2 - p0;
-    n = v ^ u;
-    pos = (p0 + p1 + p2) * (1.0f / 3.0f);
+  vect3 center;
+  Triangle tri1, tri2;
+  float width, height;
+
+  Plane(vect3 center, float width, float height)
+      : center(center), width(width), height(height) {
+
+    vect3 p0 = center + width / 2 + height / 2;
+    vect3 p1, p2;
+    vect3 p3 = center - (p1 - center);
+
+    tri1 = Triangle(p0, p1, p2);
+    tri2 = Triangle(p2, p3, p0)
   }
+
   bool is_hit(const vect3 &incoming_ray_origin,
               const vect3 &incoming_ray_dir) const;
   bool is_hit(const vect3 &incoming_ray_origin, const vect3 &incoming_ray_dir,

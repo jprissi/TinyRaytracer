@@ -2,7 +2,7 @@
 #include "objects/sphere.h"
 #include "objects/triangle.h"
 
-void Scene::addObject(Object *obj, Vect color, float reflectivity) {
+void Scene::addObject(Object *obj, vect3 color, float reflectivity) {
   // obj->set_pos(pos); //Not adapted to triangle object for now #TODO
   scene_objects.push_back(obj);
   scene_objects.back()->set_color(color);
@@ -40,7 +40,7 @@ void Scene::init() {
   addObject(sphere2, {255, 0, 0}, 0.7f);
 
   // Light initialization
-  Vect light_pos = Vect{0, 100, 0};
+  vect3 light_pos = vect3{0, 100, 0};
   lightSource =
       Light{light_pos}; // Initializing Light object with proper initial values
 }

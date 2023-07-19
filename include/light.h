@@ -5,12 +5,12 @@
 
 class Light {
     public:
-        Vect pos;
-        Vect color;
+        vect3 pos;
+        vect3 color;
 	float k_ambient;
         float k_diffuse;
 	
-        Light(Vect);
+        Light(vect3);
         Light();
 };
 

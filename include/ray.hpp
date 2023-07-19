@@ -7,8 +7,8 @@ class Ray {
 public:
   Color initColor;
   Color finalColor;
-  Vect origin;
-  Vect direction;
+  vect3 origin;
+  vect3 direction;
 
   float energy = 1.f;
 };
