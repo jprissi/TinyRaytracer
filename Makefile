@@ -31,6 +31,7 @@ $(info DEP: $(DEP))
 all: $(EXE) run
 
 $(EXE): $(OBJ)
+	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
