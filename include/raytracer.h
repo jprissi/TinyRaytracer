@@ -11,16 +11,18 @@
 class Raytracer
 {
 public:
-    Raytracer(Scene &scene, Camera const &camera);
-    void compute(std::vector<unsigned char> &img);
+    // Raytracer(Scene &scene, Camera const &camera);
+    Raytracer(Scene *p_scene);
+    void compute(std::vector<unsigned char> &img, Camera const &camera);
 
 private:
     Ray ray;
     Scene scene;
-    Camera camera;
+    // Camera camera;
+    Color computePixel(int const &x, int const &y, vect3 &outgoing_ray_origin, vect3 &outgoing_ray_dir, Camera const &camera);
     void export_color(vect3 color, std::vector<unsigned char> &img);
     bool propagate_ray(vect3 *p_outgoing_ray_origin, vect3 *p_outgoing_ray_dir,
-                       vect3 *p_color);
+                       Color *p_color);
     float random_offset();
     float clip(float component);
     vect3 sky_color(vect3 direction);

@@ -3,7 +3,8 @@
 
 #include <ostream>
 
-class vect3 {
+class vect3
+{
 public:
   // Constructors
   vect3() : x(0), y(0), z(0){};
@@ -15,6 +16,7 @@ public:
   vect3 operator-(const vect3 &v) const;
   vect3 operator^(const vect3 &v) const; // cross product
   vect3 operator*(float k) const;
+  vect3 operator+=(const vect3 &v);
   vect3 operator!() const; // normalization
   float length() const;
 };
@@ -22,5 +24,23 @@ public:
 std::ostream &operator<<(std::ostream &strm, const vect3 &v);
 
 typedef vect3 Color; // Simple alias
+
+class vect2
+{
+public:
+  vect2() : x(0.), y(0.){};
+  vect2(float x, float y) : x(x), y(y){};
+
+  float operator*(const vect2 &v) const; // dot product
+  vect2 operator+(const vect2 &v) const;
+  vect2 operator-(const vect2 &v) const;
+  // vect2 operator^(const vect2 &v) const; // cross product
+  vect2 operator*(float k) const;
+  // vect2 operator!() const; // normalization
+  // float length() const;
+  float x, y;
+};
+
+std::ostream &operator<<(std::ostream &strm, const vect2 &v);
 
 #endif

@@ -1,42 +1,52 @@
 #include "material/texture.h"
 #include <cmath>
+#include <cassert>
 
-vect3 PlainTexture::get_color(vect3 const &hit_point,
-                              vect3 const &object_position) const {
-  return this->color;
+ImageTexture::ImageTexture(const char *texture_path)
+{
+  texture_image = ImageLoader::loadPNG(texture_path, xsize, ysize);
+  assert(xsize > 0);
+  assert(ysize > 0);
+};
+
+Color ImageTexture::getColor(vect2 const &hit_point,
+                             vect3 const &object_position) const
+{
+  Color out_color; // = this->color;
+  // if (p_parent_object == nullptr)
+  // {
+  //   std::cerr << "No parent object set for texture, using default color!" << std::endl;
+  //   return out_color;
+  // }
+
+  float alpha = 0.5;
+  Color texture_color = getTexturePixel(std::round(hit_point.x), std::round(hit_point.y));
+  // std::cout << texture_color << std::endl;
+  out_color = (texture_color - out_color) * alpha + out_color; // Mix base color with texture
+
+  return out_color;
 }
 
-vect3 ImageTexture::get_color(vect3 const &hit_point,
-                              vect3 const &object_position) const {
-  vect3 color = this->map_3D_to_UV_coordinates(hit_point, object_position);
-  return color;
-}
+vect3 ImageTexture::getTexturePixel(uint const &x_in, uint const &y_in) const
+{
+  /* Retrieves pixel (x, y) from texture */
+  assert(texture_image.size() > 0);
+  assert(xsize > 0);
+  assert(ysize > 0);
 
-vect3 ImageTexture::map_3D_to_UV_coordinates(
-    vect3 const &hit_point, vect3 const &object_position) const {
-  // For Sphere:
+  // wrap
+  uint y = y_in % ysize;
+  uint x = x_in % xsize;
+  uint idx = y * this->xsize + x; // convert
 
-  vect3 d = !(hit_point - object_position);
-  float u = 0.5 + std::atan2(d.z, d.x) / (2 * M_PI);
-  float v = 0.5 + std::asin(d.y) / M_PI;
-
-  unsigned x = (int)(std::round(u * (this->xsize - 1)) + 0.5);
-  x = std::min(x, this->xsize - 1);
-  unsigned y = (int)(std::round(v * (this->ysize - 1)) + 0.5);
-  y = std::min(y, this->ysize - 1);
-
-  return ImageTexture::get_pixel(x, y);
-}
-
-vect3 ImageTexture::get_pixel(unsigned const x, unsigned const y) const {
-
-  unsigned idx = (unsigned int)(this->texture_image.size() - 1);
-  idx = std::min(y * this->xsize + x, idx);
+  // clip
+  // uint max_idx = (unsigned int)(this->texture_image.size() - 1);
+  // idx = std::min(max_idx, idx);
 
   unsigned char r = this->texture_image[4 * idx + 0];
   unsigned char g = this->texture_image[4 * idx + 1];
   unsigned char b = this->texture_image[4 * idx + 2];
-  unsigned char a = this->texture_image[4 * idx + 3];
+  // unsigned char a = this->texture_image[4 * idx + 3]; // Transparency channel (unused)
 
   return vect3(r, g, b);
 }

@@ -26,3 +26,9 @@ Some *FUN* ideas:
 - Clouds
 
 ![Example](./img.png)
+
+## Acknowledgements
+
+- [Raycasting From Scratch](https://github.com/nikolausmayer/raytracing-from-scratch) lesson by Nikolaus Mayer for the ideas and explanations
+- lodepng library, written by lvandeve : https://github.com/lvandeve/lodepng
+- simple-matrix library, written by torin-carey : https://github.com/torin-carey/simple-matrix

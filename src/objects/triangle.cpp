@@ -1,7 +1,8 @@
 #include "objects/triangle.h"
 
 bool Triangle::is_hit(const vect3 &incoming_ray_origin,
-                      const vect3 &incoming_ray_dir) const {
+                      const vect3 &incoming_ray_dir) const
+{
   // for now, no shadow
   return false;
   // TODO This is basically a copy paste of the next function, reformat it!
@@ -45,7 +46,8 @@ bool Triangle::is_hit(const vect3 &incoming_ray_origin,
        rz * ux * vy - rz * uy * vx);
 
   if (u_fact < 0 or u_fact > 1 or v_fact < 0 or v_fact > 1 or
-      u_fact + v_fact > 1 or ray_fact < 0) {
+      u_fact + v_fact > 1 or ray_fact < 0)
+  {
     return false;
   }
 
@@ -61,7 +63,8 @@ bool Triangle::is_hit(const vect3 &incoming_ray_origin,
                       vect3 &outgoing_ray_dir, float &hit_distance,
                       // vect3& hit_color
                       Material &hit_material, vect3 &hit_color, float ray_energy,
-                      Light light_source) const {
+                      Light light_source) const
+{
   if (n * incoming_ray_dir >= 0)
     return false;
 
@@ -113,7 +116,8 @@ bool Triangle::is_hit(const vect3 &incoming_ray_origin,
        rz * ux * vy - rz * uy * vx);
 
   if (u_fact < 0 or u_fact > 1 or v_fact < 0 or v_fact > 1 or
-      u_fact + v_fact > 1 or ray_fact < 0) {
+      u_fact + v_fact > 1 or ray_fact < 0)
+  {
     return false;
   }
 
@@ -126,7 +130,8 @@ bool Triangle::is_hit(const vect3 &incoming_ray_origin,
   outgoing_ray_dir = !vect3{incoming_ray_dir - !n * (incoming_ray_dir * !n) * 2};
 
   hit_material = material;
-  hit_color = material.p_texture->get_color(outgoing_ray_origin, pos) *
+  // TODO : compute UV
+  hit_color = material.get_texture()->getColor(vect2{outgoing_ray_origin.x, outgoing_ray_origin.y}, pos) *
               (1 - material.reflectivity) * ray_energy;
   return true;
 }

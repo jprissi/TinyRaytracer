@@ -2,12 +2,14 @@
 #include <stdio.h>
 #include <vector>
 #include "ray.hpp"
+#include <cassert>
 
-const int AA_samples = 32;     // Antialiasing samples
-const float scale = 1.f / 512; // depends on image resolution
+const int AA_samples = 16;     // Antialiasing samples
+const float scale = 1.f / 256; // depends on image resolution // TODO
 const int max_hit_bounces = 3; // Maximum number of ray hits
 
 const vect3 X{1 * scale, 0, 0};
+// const vect3 X{0, 0, 0};
 const vect3 Y{0, 1 * scale, 0};
 const vect3 Z{0, 0, 1};
 
@@ -16,59 +18,25 @@ std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_real_distribution<float> rand_gen(-0.5f, 0.5f);
 
-Raytracer::Raytracer(Scene &scene, Camera const &camera) : camera(camera)
+Raytracer::Raytracer(Scene *p_scene) //: //, camera(camera)
 {
+  this->scene = *p_scene;
   scene.init();
 };
 
-void Raytracer::compute(std::vector<unsigned char> &img)
+void Raytracer::compute(std::vector<unsigned char> &img, Camera const &camera)
 {
   img.reserve(4 * camera.getWidth() * camera.getHeight());
-
   vect3 outgoing_ray_origin;
   vect3 outgoing_ray_dir;
-  Color final_color;
 
   // Left-handed base with z forward
-  for (int y = 256; y >= -255; y--)
+  for (int y = camera.getHeight() / 2; y >= -camera.getHeight() / 2 + 1; y--)
   {
-    for (int x = -255; x <= 256; x++)
+    for (int x = -camera.getWidth() / 2 + 1; x <= camera.getWidth() / 2; x++)
     {
-      // We use pixel centers (x-0.5), (y-0.5)
-      final_color = {0, 0, 0};
-      for (int i = 0; i < AA_samples; i++)
-      {
-        float x_offset = rand_gen(gen);
-        float y_offset = rand_gen(gen);
 
-        ray.direction =
-            !vect3{X * (x - 0.5 + x_offset) + Y * (y - 0.5 + y_offset) +
-                   Z};
-        ray.origin = vect3{0, 1, -4};
-        ray.energy =
-            1.0f; // 0.2*random_offset()+0.8f;//1.0f;//random_offset(); //1.0f;
-
-        // adding depth of field
-        vect3 sensor_shift{random_offset() * camera.aperture,
-                           random_offset() * camera.aperture, 0.0f};
-        ray.origin = ray.origin + sensor_shift;
-        ray.direction =
-            !(ray.direction - sensor_shift * (1. / camera.focalDistance));
-
-        Color color;
-        for (int number_bounces = 0; number_bounces < max_hit_bounces;
-             number_bounces++)
-        {
-          if (!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, &color))
-          {
-            // If no bounce
-            break;
-          };
-        }
-        final_color = final_color + color * (1.0f / AA_samples); // TODO: add += operator to vect3
-      }
-
-      // propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, scene_objects);
+      Color final_color = computePixel(x, y, outgoing_ray_origin, outgoing_ray_dir, camera);
       export_color(final_color, img);
     }
   }
@@ -88,9 +56,67 @@ void Raytracer::compute(std::vector<unsigned char> &img)
     std::cout << "Exported img.png!\n";
   }
 };
+Color Raytracer::computePixel(int const &x, int const &y, vect3 &outgoing_ray_origin, vect3 &outgoing_ray_dir, Camera const &camera)
+{
+  Color final_color = {0, 0, 0};
+  // We use pixel centers (x-0.5), (y-0.5)
+
+  matrix X_matrix(3, 1, {0, 0, 0});
+  X_matrix(0, 0) = X.x;
+  matrix X_temp = camera.getOrientation() * X_matrix; // X_temp (3, 1)
+  vect3 X(X_temp(0, 0), X_temp(1, 0), X_temp(2, 0));
+  // std::cout << X << std::endl;
+  matrix Y_matrix(3, 1, {0, 0, 0});
+  Y_matrix(1, 0) = Y.y;
+  matrix Y_temp = camera.getOrientation() * Y_matrix; // X_temp (3, 1)
+  vect3 Y(Y_temp(0, 0), Y_temp(1, 0), Y_temp(2, 0));
+  // std::cout << Y << std::endl;
+  matrix Z_matrix(3, 1, {0, 0, 1});
+  matrix Z_temp = camera.getOrientation() * Z_matrix; // X_temp (3, 1)
+  vect3 Z(Z_temp(0, 0), Z_temp(1, 0), Z_temp(2, 0));
+  // std::cout << Z << std::endl;
+  // std::cout << Z_temp << std::endl;
+  // std::cout << Z_temp(0, 0) << "; " << Z_temp(1, 0) << "; " << Z_temp(2, 0) << std::endl;
+  // int AA_samples = 32;
+  for (int i = 0; i < AA_samples; i++)
+  {
+    float x_offset = rand_gen(gen);
+    float y_offset = rand_gen(gen);
+
+    ray.direction =
+        !vect3{X * (x - 0.5 + x_offset) + Y * (y - 0.5 + y_offset) +
+               Z};
+    ray.origin = camera.getPosition() + vect3{0, 1, -4};
+
+    float lambda = 0.9f; // Randomize energy
+    ray.energy = (1 - lambda) * (random_offset() + 0.5) + lambda;
+    ray.energy = 1.5f;
+
+    // adding depth of field - messes up the background?
+    vect3 sensor_shift{random_offset() * camera.aperture,
+                       random_offset() * camera.aperture, 0.0f};
+    // vect3 sensor_shift;
+
+    ray.origin = ray.origin + sensor_shift;
+    ray.direction =
+        !(ray.direction - sensor_shift * (1. / camera.focalDistance));
+
+    Color color;
+    for (int n_bounces = 0; n_bounces < max_hit_bounces; n_bounces++)
+    {
+      if (!propagate_ray(&outgoing_ray_origin, &outgoing_ray_dir, &color))
+      {
+        break; // If no bounce
+      };
+    }
+
+    final_color += color * (1.0f / AA_samples);
+  }
+  return final_color;
+};
 
 bool Raytracer::propagate_ray(vect3 *p_outgoing_ray_origin, vect3 *p_outgoing_ray_dir,
-                              vect3 *p_color)
+                              Color *p_color)
 {
   float distance_to_hit;
   bool object_hit{false};
@@ -98,12 +124,14 @@ bool Raytracer::propagate_ray(vect3 *p_outgoing_ray_origin, vect3 *p_outgoing_ra
   Object *closest_object_ptr{nullptr};
   Material hit_material{};
   vect3 hit_color{0, 0, 0};
+
   for (const auto &object : scene.scene_objects)
   {
     if (object->is_hit(ray.origin, ray.direction, *p_outgoing_ray_origin,
                        *p_outgoing_ray_dir, distance_to_hit, hit_material,
                        hit_color, ray.energy, scene.lightSource))
     {
+      // assert(false); // No object hit
       object_hit = true;
       if (distance_to_hit < closest_obj_dist)
       {
@@ -121,7 +149,7 @@ bool Raytracer::propagate_ray(vect3 *p_outgoing_ray_origin, vect3 *p_outgoing_ra
     ray.origin = *p_outgoing_ray_origin;
     ray.direction = *p_outgoing_ray_dir;
 
-    *p_color = *p_color + hit_color;
+    *p_color += hit_color;
     ray.energy *= hit_material.reflectivity;
     return true;
   }
@@ -168,6 +196,7 @@ vect3 Raytracer::sky_color(vect3 direction)
 
 vect3 Raytracer::ground_color(vect3 direction, vect3 origin)
 {
+  vect3 hit_color;
 
   float dist = -origin.y / direction.y;
   float x = origin.x + dist * direction.x;
@@ -177,9 +206,6 @@ vect3 Raytracer::ground_color(vect3 direction, vect3 origin)
   vect3 hit_point = vect3{x, y, z};
   // float distance_to_hit;
   bool is_directly_lit{true};
-
-  // Material hit_material{};
-  vect3 hit_color{0, 0, 0};
 
   // Handle shadowing
   vect3 dir = !(scene.lightSource.pos - hit_point);
@@ -192,14 +218,19 @@ vect3 Raytracer::ground_color(vect3 direction, vect3 origin)
     }
   }
 
+  if (scene.ground_texture != nullptr)
+  {
+    float scale = 200.0f;
+    hit_color = scene.ground_texture->getColor(vect2{hit_point.z, hit_point.x} * (scale), vect3{0., 0., 0.});
+    return hit_color;
+  }
+  // White
+
+  hit_color = vect3{1.0, 1.0, 1.0} * 255.f;
   if ((int)std::abs(std::floor(x)) % 2 ==
       (int)std::abs(std::floor(z)) % 2)
-  { // Black if both x and y are odd/even
-    hit_color = vect3{0.0, 0.0, 0.0} * 255.f;
-  }
-  else
   {
-    hit_color = vect3{1.0, 1.0, 1.0} * 255.f;
+    hit_color = vect3{0.0, 0.0, 0.0} * 255.f; // Black if both x and y are odd/even
   }
 
   if (!is_directly_lit)

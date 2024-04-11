@@ -908,7 +908,7 @@ void lodepng_color_stats_init(LodePNGColorStats *stats);
 
 /*Get a LodePNGColorStats of the image. The stats must already have been inited.
 Returns error code (e.g. alloc fail) or 0 if ok.*/
-unsigned lodepng_compute_color_stats(LodePNGColorStats *stats,
+unsigned lodepng_computeColor_stats(LodePNGColorStats *stats,
                                      const unsigned char *image, unsigned w,
                                      unsigned h,
                                      const LodePNGColorMode *mode_in);

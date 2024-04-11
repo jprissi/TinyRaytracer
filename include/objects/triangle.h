@@ -21,10 +21,10 @@ public:
               // vect3& hit_color
               Material &hit_material, vect3 &hit_color, float ray_energy,
               Light light_source) const;
-  void set_pos(const vect3 &new_pos) {
+  void setPos(const vect3 &new_pos) {
     std::cout << "WARNING : Changing position of triangle not supported yet"
               << std::endl;
-    Object::set_pos(new_pos);
+    Object::setPos(new_pos);
   }
 };
 

@@ -6,13 +6,17 @@
 // #include <stdio>
 #define M_PI 3.141592653589793238462643383279502884L /* pi */
 
-vect3 Material::compute_color(Light light, vect3 hit_point, vect3 hit_normal,
+vect3 Material::computeColor(Light light, vect3 hit_point, vect3 hit_normal,
                              vect3 out_ray_dir, vect3 object_center) const {
   // vect3 color{0, 0, 0};
   vect3 L = !(light.pos - hit_point);
-  // Ambient light
+  
   Texture *p_t = this->p_texture;
-  vect3 color = p_t->get_color(hit_point, object_center);
+  
+  assert(0);
+  Color color = p_t->getColor(vect2{hit_point.x, hit_point.y}, object_center);
+
+  // Ambient light
   vect3 I_ambient = color * light.k_ambient;
   // Diffuse
   float f_diffuse = L * hit_normal;

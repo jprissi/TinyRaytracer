@@ -3689,7 +3689,7 @@ static unsigned getValueRequiredBits(unsigned char value) {
 }
 
 /*stats must already have been inited. */
-unsigned lodepng_compute_color_stats(LodePNGColorStats* stats,
+unsigned lodepng_computeColor_stats(LodePNGColorStats* stats,
                                      const unsigned char* in, unsigned w, unsigned h,
                                      const LodePNGColorMode* mode_in) {
   size_t i;
@@ -3886,14 +3886,14 @@ static unsigned lodepng_color_stats_add(LodePNGColorStats* stats,
   image[4] = b >> 8; image[5] = b; image[6] = a >> 8; image[7] = a;
   mode.bitdepth = 16;
   mode.colortype = LCT_RGBA;
-  error = lodepng_compute_color_stats(stats, image, 1, 1, &mode);
+  error = lodepng_computeColor_stats(stats, image, 1, 1, &mode);
   lodepng_color_mode_cleanup(&mode);
   return error;
 }
 #endif /*LODEPNG_COMPILE_ANCILLARY_CHUNKS*/
 
 /*Computes a minimal PNG color model that can contain all colors as indicated by the stats.
-The stats should be computed with lodepng_compute_color_stats.
+The stats should be computed with lodepng_computeColor_stats.
 mode_in is raw color profile of the image the stats were computed on, to copy palette order from when relevant.
 Minimal PNG color model means the color type and bit depth that gives smallest amount of bits in the output image,
 e.g. gray if only grayscale pixels, palette if less than 256 colors, color key if only single transparent color, ...
@@ -5897,7 +5897,7 @@ unsigned lodepng_encode(unsigned char** out, size_t* outsize,
       stats.allow_greyscale = 0;
     }
 #endif /* LODEPNG_COMPILE_ANCILLARY_CHUNKS */
-    state->error = lodepng_compute_color_stats(&stats, image, w, h, &state->info_raw);
+    state->error = lodepng_computeColor_stats(&stats, image, w, h, &state->info_raw);
     if(state->error) goto cleanup;
 #ifdef LODEPNG_COMPILE_ANCILLARY_CHUNKS
     if(info_png->background_defined) {

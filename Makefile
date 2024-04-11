@@ -3,7 +3,10 @@
 CXX := g++
 CXXFLAGS := -Wall -Wextra  -std=c++17 -O2
 #-Wpedantic
-CPPFLAGS := -Iinclude -Ilib/ -MMD -MP -g -fno-stack-protector
+CPPFLAGS := -Iinclude -Ilib/ -MMD -MP -g -fno-stack-protector -Wno-unused-parameter
+# CPPFLAGS += -Ithird-party -lsimple-matrix
+# Remove warning for unused variable (temporarily) : -Wno-unused-parameter
+
 
 EXE ?= ./bin/raytracer
 OBJ_DIR ?= build

@@ -4,37 +4,34 @@
 #include "io/imageloader.h"
 #include "vector.h"
 
-class Texture {
+class Texture
+{
 public:
-  virtual vect3 get_color(vect3 const &hit_point,
-                          vect3 const &object_position) const = 0;
+  void setColor(Color const &color) { this->color = color; };
+  virtual Color getColor(vect2 const &hit_point,
+                         vect3 const &object_position) const { return this->color; };
 
-  vect3 color;
+protected:
+  Color color;
 };
 
-class ImageTexture : public Texture {
+class ImageTexture : public Texture
+{
 public:
-  virtual vect3 get_color(vect3 const &hit_point,
-                          vect3 const &object_position) const;
-  ImageTexture(const char *texture_path) {
-    texture_image = ImageLoader::loadPNG(texture_path, xsize, ysize);
-    std::cout << xsize << "; " << ysize << std::endl;
+  ImageTexture(const char *texture_path);
+  Color getColor(vect2 const &hit_point,
+                 vect3 const &object_position) const override;
+  void getTextureSize(uint &xsize_out, uint &ysize_out) const
+  {
+    xsize_out = this->xsize;
+    ysize_out = this->ysize;
   };
 
+private:
+  Color getTexturePixel(uint const &x, uint const &y) const;
   std::vector<unsigned char> texture_image;
-  unsigned xsize, ysize;
+  unsigned xsize, ysize = 0;
   std::string texture_path;
-
-  // First, attempt to implement onto sphere
-  vect3 map_3D_to_UV_coordinates(vect3 const &hit_point,
-                                 vect3 const &object_position) const;
-  vect3 get_pixel(unsigned const x, unsigned const y) const;
-};
-
-class PlainTexture : public Texture {
-public:
-  virtual vect3 get_color(vect3 const &hit_point,
-                          vect3 const &object_position) const;
 };
 
 #endif

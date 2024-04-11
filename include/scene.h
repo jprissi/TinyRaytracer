@@ -15,7 +15,9 @@ public:
   Camera camera;
   void addObject(Object *obj, vect3 color, float reflectivity);
   // void setCamera(Camera c) : camera(c) {};
+  ImageTexture *ground_texture = nullptr;
   void init();
+  
 };
 
 #endif
